@@ -80,9 +80,25 @@ const getPostById = async(req:Request, res:Response)=>{
         })
     }
 }
+const getMyPost = async(req:Request, res:Response)=>{
+    try{
+        const user = req.user;
+        if(!user){
+            throw new Error("user is required")
+        }
+        const result = await postServices.getMyPost(user.id);
+        res.status(200).json(result)
+    }catch (e) {
+        res.status(400).json({
+            error: "find own post failed",
+            details: e
+        })
+    }
+}
 
 export const postController = {
     createPost,
     getAllPost,
-    getPostById
+    getPostById,
+    getMyPost
 }
