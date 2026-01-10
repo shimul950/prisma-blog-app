@@ -1,9 +1,10 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { postServices } from "./post.services";
 import { PostStatus } from "../../../generated/prisma/enums";
 import paginationSortingHelper from "../../helper/pagination&sorting";
+import { UserRole } from "../../middlewares/auth";
 
-const createPost = async (req: Request, res: Response) => {
+const createPost = async (req: Request, res: Response, next:NextFunction) => {
     try {
         const user = req.user;
         if (!user) {
@@ -16,10 +17,7 @@ const createPost = async (req: Request, res: Response) => {
         res.status(201).json(result)
     }
     catch (e) {
-        res.status(400).json({
-            error: "post creation failed",
-            details: e
-        })
+        next(e)
     }
 }
 
@@ -86,6 +84,7 @@ const getMyPost = async(req:Request, res:Response)=>{
         if(!user){
             throw new Error("user is required")
         }
+        
         const result = await postServices.getMyPost(user.id);
         res.status(200).json(result)
     }catch (e) {
@@ -95,10 +94,62 @@ const getMyPost = async(req:Request, res:Response)=>{
         })
     }
 }
+const updateOwnPost = async(req:Request, res:Response)=>{
+    try{
+        const user = req.user;
+        if(!user){
+            throw new Error("user is required")
+        }
+        const {postId}= req.params
+        const isAdmin = user.role === UserRole.ADMIN //if the user is Admin, it returns true
+        const result = await postServices.updateOwnPost(postId as string, req.body, user.id, isAdmin);
+        res.status(200).json(result)
+    }catch (e) {
+        const errorMessage = (e instanceof Error) ? e.message :"update failed"
+        res.status(400).json({
+            error: errorMessage,
+            details: e
+        })
+    }
+}
+const deletePost = async(req:Request, res:Response)=>{
+    try{
+        const user = req.user;
+        if(!user){
+            throw new Error("user is required")
+        }
+        const {postId}= req.params
+        const isAdmin = user.role === UserRole.ADMIN //if the user is Admin, it returns true
+        const result = await postServices.deletePost(postId as string, user.id, isAdmin);
+        res.status(200).json(result)
+    }catch (e) {
+        const errorMessage = (e instanceof Error) ? e.message :"update failed"
+        res.status(400).json({
+            error: errorMessage,
+            details: e
+        })
+    }
+}
+const getStats = async(req:Request, res:Response)=>{
+    try{
+        
+        const result = await postServices.getStats();
+        res.status(200).json(result)
+    }catch (e) {
+        const errorMessage = (e instanceof Error) ? e.message :"Statistics fetched failed"
+        res.status(400).json({
+            error: errorMessage,
+            details: e
+        })
+    }
+}
 
 export const postController = {
     createPost,
     getAllPost,
     getPostById,
-    getMyPost
+    getMyPost,
+    updateOwnPost,
+    deletePost,
+    getStats
 }
