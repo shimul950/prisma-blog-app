@@ -94,7 +94,7 @@ const getMyPost = async(req:Request, res:Response)=>{
         })
     }
 }
-const updateOwnPost = async(req:Request, res:Response)=>{
+const updateOwnPost = async(req:Request, res:Response, next:NextFunction)=>{
     try{
         const user = req.user;
         if(!user){
@@ -105,11 +105,7 @@ const updateOwnPost = async(req:Request, res:Response)=>{
         const result = await postServices.updateOwnPost(postId as string, req.body, user.id, isAdmin);
         res.status(200).json(result)
     }catch (e) {
-        const errorMessage = (e instanceof Error) ? e.message :"update failed"
-        res.status(400).json({
-            error: errorMessage,
-            details: e
-        })
+        next(e)
     }
 }
 const deletePost = async(req:Request, res:Response)=>{
